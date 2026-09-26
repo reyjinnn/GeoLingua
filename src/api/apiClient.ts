@@ -32,7 +32,7 @@ export async function apiClient<T>(path: string, options: RequestOptions = {}): 
       body: options.body === undefined ? undefined : JSON.stringify(options.body),
     })
   } catch {
-    throw new ApiError('Tidak dapat terhubung ke server. Periksa koneksi dan alamat API.', 0, 'NETWORK_ERROR')
+    throw new ApiError('Cannot Connect To Server, Please T.', 0, 'NETWORK_ERROR')
   }
 
   let payload: ApiResponse<T>
@@ -40,7 +40,7 @@ export async function apiClient<T>(path: string, options: RequestOptions = {}): 
   catch { throw new ApiError('Respons server tidak valid.', response.status, 'INVALID_RESPONSE') }
 
   if (!response.ok || !payload.success) {
-    const failure = !payload.success ? payload.error : undefined
+    const failure = 'error' in payload ? payload.error : undefined
     if (response.status === 401 && token) {
       tokenStorage.clear()
       window.dispatchEvent(new Event('geolingua:session-expired'))
