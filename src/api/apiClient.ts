@@ -6,8 +6,8 @@ const baseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api
 export class ApiError extends Error {
   status: number
   code: string
-  details?: Record<string, string>
-  constructor(message: string, status: number, code: string, details?: Record<string, string>) {
+  details?: Record<string, string> | string[] | unknown
+  constructor(message: string, status: number, code: string, details?: Record<string, string> | string[] | unknown) {
     super(message)
     this.status = status
     this.code = code
