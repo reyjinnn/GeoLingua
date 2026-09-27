@@ -2,7 +2,6 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { ProtectedRoute } from '../components/layout/ProtectedRoute'
 import { DashboardPage } from '../pages/learner/DashboardPage'
-import { FeaturePage } from '../pages/learner/FeaturePage'
 import { LessonPage } from '../pages/learner/LessonPage'
 import { ModulePage } from '../pages/learner/ModulePage'
 import { OnboardingPage } from '../pages/learner/OnboardingPage'
@@ -18,7 +17,7 @@ import { QuizResultPage } from '../pages/learner/QuizResultPage'
 import { AdminDashboardPage } from '../pages/admin/AdminDashboardPage'
 import { AdminModuleEditorPage } from '../pages/admin/AdminModuleEditorPage'
 
-const pending = (title: string, description: string) => <FeaturePage title={title} description={description} />
+import { ProfilePage } from '../pages/learner/ProfilePage'
 
 export function AppRoutes() {
   return <BrowserRouter><Routes><Route element={<AppLayout />}>
@@ -37,7 +36,7 @@ export function AppRoutes() {
       <Route path="/modules/:id/quiz" element={<QuizPage />} />
       <Route path="/modules/:id/quiz/result" element={<QuizResultPage />} />
       <Route path="/progress" element={<ProgressPage />} />
-      <Route path="/profile" element={pending('Profil', 'Preferensi bahasa dan informasi akun akan tersedia di sini.')} />
+      <Route path="/profile" element={<ProfilePage />} />
     </Route>
     <Route element={<ProtectedRoute admin />}>
       <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
