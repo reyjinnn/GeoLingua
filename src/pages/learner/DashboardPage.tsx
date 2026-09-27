@@ -34,18 +34,10 @@ export function DashboardPage() {
   const resumeModule = orderedModules.find((module) => module.status === 'in_progress' && !isCompleted(module))
     ?? orderedModules.find((module) => !isLocked(module) && !isCompleted(module))
 
-  if (!user?.active_course) {
-    return <section className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-      <h1 className="text-2xl font-bold">Pilih jalur belajarmu</h1>
-      <p className="mt-2 text-slate-600">Tentukan bahasa dan level awal untuk melihat peta modul.</p>
-      <Link to="/onboarding" className="mt-5 inline-flex min-h-12 items-center rounded-lg bg-brand px-5 font-semibold text-white hover:bg-blue-700">Mulai onboarding</Link>
-    </section>
-  }
-
   return <>
     <header className="mb-8">
-      <p className="font-semibold text-secondary">{user.active_course.current_level} · Jalur belajar</p>
-      <h1 className="mt-2 text-3xl font-bold">Halo, {user.full_name.split(' ')[0]}</h1>
+      <p className="font-semibold text-secondary">{user!.active_course!.current_level} · Jalur belajar</p>
+      <h1 className="mt-2 text-3xl font-bold">Halo, {user!.full_name.split(' ')[0]}</h1>
       <p className="mt-2 text-slate-600">Lanjutkan perjalanan belajar Anda, satu modul dalam satu waktu.</p>
     </header>
 
@@ -60,12 +52,12 @@ export function DashboardPage() {
       <section aria-labelledby="level-progress-title" className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-wrap items-end justify-between gap-2">
           <div>
-            <h2 id="level-progress-title" className="text-xl font-semibold">Kemajuan level {user.active_course.current_level}</h2>
+            <h2 id="level-progress-title" className="text-xl font-semibold">Kemajuan level {user!.active_course!.current_level}</h2>
             <p className="mt-1 text-sm text-slate-600">{completedCount} dari {orderedModules.length} modul selesai</p>
           </div>
           <span className="text-2xl font-bold text-secondary">{levelProgress}%</span>
         </div>
-        <div role="progressbar" aria-label={`Kemajuan level ${user.active_course.current_level}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={levelProgress} className="mt-4 h-3 overflow-hidden rounded-full bg-slate-100">
+        <div role="progressbar" aria-label={`Kemajuan level ${user!.active_course!.current_level}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={levelProgress} className="mt-4 h-3 overflow-hidden rounded-full bg-slate-100">
           <div className="h-full rounded-full bg-secondary" style={{ width: `${levelProgress}%` }} />
         </div>
       </section>

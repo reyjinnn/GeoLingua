@@ -6,6 +6,7 @@ export const curriculumApi = {
   levels: () => apiClient<Level[]>('/levels'),
   courses: () => apiClient<CourseOption[]>('/courses'),
   savePreferences: (input: LearningPreferences) => apiClient<{ message: string }>('/user/preferences', { method: 'POST', body: input }),
-  modules: () => apiClient<ModuleSummary[]>('/modules'),
-  module: (id: string) => apiClient<ModuleDetail>(`/modules/${encodeURIComponent(id)}`),
+  modules: () => apiClient<{ modules: ModuleSummary[] }>('/modules').then(d => d.modules),
+  module: (id: string) => apiClient<{ module: ModuleDetail }>(`/modules/${encodeURIComponent(id)}`).then(d => d.module),
+  lesson: (id: string) => apiClient<{ lesson: import('../types/curriculum.types').LessonDetail }>(`/lessons/${encodeURIComponent(id)}`).then(d => d.lesson),
 }
