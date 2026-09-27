@@ -73,7 +73,7 @@ export function DrillPage() {
             <button
               key={opt.id}
               disabled={isChecked || engine.checking}
-              onClick={() => { setAnswer(opt.text); engine.check(opt.id.toString()) }}
+              onClick={() => { setAnswer(opt.text); engine.check(opt.text) }}
               className={`flex min-h-14 items-center rounded-lg border p-4 text-left transition-colors ${answer === opt.text ? 'border-brand bg-blue-50' : 'border-slate-200 hover:border-slate-300'} disabled:opacity-80`}
             >
               {opt.text}
