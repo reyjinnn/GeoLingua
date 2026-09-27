@@ -6,6 +6,7 @@ import { FeaturePage } from '../pages/learner/FeaturePage'
 import { LessonPage } from '../pages/learner/LessonPage'
 import { ModulePage } from '../pages/learner/ModulePage'
 import { OnboardingPage } from '../pages/learner/OnboardingPage'
+import { ProgressPage } from '../pages/learner/ProgressPage'
 import { AuthPage } from '../pages/public/AuthPage'
 import { LandingPage } from '../pages/public/LandingPage'
 
@@ -27,7 +28,7 @@ export function AppRoutes() {
       <Route path="/lessons/:id/writing" element={pending('Latihan menulis', 'Teks akan divalidasi terhadap kosakata wajib dan jumlah kata minimal.')} />
       <Route path="/modules/:id/quiz" element={pending('Kuis modul', 'Kuis 10 soal akan menentukan kelulusan pada ambang nilai 70%.')} />
       <Route path="/modules/:id/quiz/result" element={pending('Hasil kuis', 'Nilai dan status modul akan ditampilkan setelah pengiriman jawaban.')} />
-      <Route path="/progress" element={pending('Progress belajar', 'Riwayat kuis dan kemajuan kosakata akan muncul setelah endpoint progress tersedia.')} />
+      <Route path="/progress" element={<ProgressPage />} />
       <Route path="/profile" element={pending('Profil', 'Preferensi bahasa dan informasi akun akan tersedia di sini.')} />
     </Route>
     <Route element={<ProtectedRoute admin />}>
