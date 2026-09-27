@@ -10,7 +10,8 @@ export function QuizPage() {
   const navigate = useNavigate()
   const [quiz, setQuiz] = useState<ModuleQuiz | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+  const [loadError, setLoadError] = useState('')
+  const [submitError, setSubmitError] = useState('')
   const [currentIdx, setCurrentIdx] = useState(0)
   const [answers, setAnswers] = useState<Record<number, number>>({})
   const [submitting, setSubmitting] = useState(false)
@@ -27,13 +28,13 @@ export function QuizPage() {
           startTime.current = Date.now()
         }
       })
-      .catch((cause) => { if (active) setError(cause instanceof Error ? cause.message : 'Kuis gagal dimuat.') })
+      .catch((cause) => { if (active) setLoadError(cause instanceof Error ? cause.message : 'Kuis gagal dimuat.') })
       .finally(() => { if (active) setLoading(false) })
     return () => { active = false }
   }, [id])
 
   if (loading) return <p role="status">Memuat kuis...</p>
-  if (error) return <PageState title="Kuis belum tersedia" message={error} />
+  if (loadError) return <PageState title="Kuis belum tersedia" message={loadError} />
   if (!quiz || quiz.questions.length === 0) return <PageState title="Kuis belum siap" message="Modul ini belum memiliki soal kuis yang diterbitkan." />
 
   const q = quiz.questions[currentIdx]
@@ -44,6 +45,7 @@ export function QuizPage() {
   async function submit() {
     if (!isAllAnswered) return
     setSubmitting(true)
+    setSubmitError('')
     const durationSeconds = Math.round((Date.now() - startTime.current) / 1000)
     
     const formattedAnswers = Object.entries(answers).map(([qId, optId]) => ({
@@ -55,7 +57,7 @@ export function QuizPage() {
       const result = await learningApi.submitQuiz(quiz!.quiz_id, formattedAnswers, durationSeconds)
       navigate(`/modules/${id}/quiz/result`, { state: { result, quizTitle: quiz!.title }, replace: true })
     } catch (cause) {
-      setError(cause instanceof Error ? cause.message : 'Kuis gagal dikirim.')
+      setSubmitError(cause instanceof Error ? cause.message : 'Kuis gagal dikirim. Silakan coba lagi.')
       setSubmitting(false)
     }
   }
@@ -94,6 +96,15 @@ export function QuizPage() {
         ))}
       </div>
     </div>
+
+    {submitError && (
+      <div className="mt-6 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700 flex items-center justify-between">
+        <span>{submitError}</span>
+        <Button onClick={submit} className="ml-4 bg-red-600 hover:bg-red-700 text-white text-xs py-1.5 px-3">
+          Coba Kirim Lagi
+        </Button>
+      </div>
+    )}
 
     <div className="mt-8 flex justify-between">
       <Button 
