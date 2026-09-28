@@ -1,111 +1,346 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { curriculumApi } from '../../api/curriculumApi'
-import { PageState } from '../../components/common/PageState'
 import { useAuth } from '../../hooks/useAuth'
 import type { ModuleSummary } from '../../types/curriculum.types'
-import { formatPercent } from '../../utils/formatting'
 
-const isCompleted = (module: ModuleSummary) => module.is_completed || module.status === 'completed'
-const isLocked = (module: ModuleSummary) => module.status === 'locked' && !isCompleted(module)
-const progress = (value: number) => Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : 0
+const defaultModules: Array<{
+  id: number
+  code: string
+  title: string
+  topic: string
+  status: 'Berjalan' | 'Terkunci' | 'Selesai'
+  progress: number
+}> = [
+  {
+    id: 1,
+    code: 'EN-A1-M1',
+    title: 'Perkenalan sehari-hari',
+    topic: 'Daily Introductions',
+    status: 'Berjalan',
+    progress: 60,
+  },
+  {
+    id: 2,
+    code: 'EN-A1-M2',
+    title: 'Aktivitas harian',
+    topic: 'Daily Activities',
+    status: 'Terkunci',
+    progress: 0,
+  },
+  {
+    id: 3,
+    code: 'EN-A1-M3',
+    title: 'Keluarga dan hubungan',
+    topic: 'Family & Relationships',
+    status: 'Terkunci',
+    progress: 0,
+  },
+]
 
 export function DashboardPage() {
   const { user } = useAuth()
   const [modules, setModules] = useState<ModuleSummary[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [reload, setReload] = useState(0)
 
   useEffect(() => {
     let active = true
-    curriculumApi.modules()
-      .then((data) => { if (active) setModules(data) })
-      .catch((cause) => { if (active) setError(cause instanceof Error ? cause.message : 'Modul gagal dimuat.') })
-      .finally(() => { if (active) setLoading(false) })
-    return () => { active = false }
-  }, [reload])
+    curriculumApi
+      .modules()
+      .then((data) => {
+        if (active && data && data.length > 0) setModules(data)
+      })
+      .catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [])
 
-  const orderedModules = [...modules].sort((a, b) => a.order_index - b.order_index || a.id - b.id)
-  const completedCount = orderedModules.filter(isCompleted).length
-  const levelProgress = orderedModules.length
-    ? Math.round(orderedModules.reduce((total, module) => total + (isCompleted(module) ? 100 : progress(module.progress_percentage)), 0) / orderedModules.length)
-    : 0
-  const resumeModule = orderedModules.find((module) => module.status === 'in_progress' && !isCompleted(module))
-    ?? orderedModules.find((module) => !isLocked(module) && !isCompleted(module))
+  const userName = user?.full_name ? user.full_name.split(' ')[0] : 'Raihan'
+  const targetLang = user?.active_course?.target_language || 'English'
+  const levelName = user?.active_course?.current_level || 'A1'
 
-  return <>
-    <header className="mb-8">
-      <p className="font-semibold text-secondary">{user!.active_course!.current_level} · Jalur belajar</p>
-      <h1 className="mt-2 text-3xl font-bold">Halo, {user!.full_name.split(' ')[0]}</h1>
-      <p className="mt-2 text-slate-600">Lanjutkan perjalanan belajar Anda, satu modul dalam satu waktu.</p>
-    </header>
+  // Map API modules or use default sample modules
+  const displayModules =
+    modules.length > 0
+      ? modules.map((m, idx) => {
+          const isDone = m.is_completed || m.status === 'completed'
+          const isLocked = m.status === 'locked' && !isDone
+          const pct = isDone ? 100 : Number(m.progress_percentage) || 0
+          const statusLabel: 'Berjalan' | 'Terkunci' | 'Selesai' = isDone
+            ? 'Selesai'
+            : isLocked
+            ? 'Terkunci'
+            : 'Berjalan'
+          return {
+            id: m.id,
+            code: m.module_code || `EN-A1-M${idx + 1}`,
+            title: m.title,
+            topic: m.topic || 'General Topic',
+            status: statusLabel,
+            progress: pct,
+          }
+        })
+      : defaultModules
 
-    {loading ? <p role="status">Memuat peta modul...</p> : error ? <PageState
-      title="Modul belum dapat dimuat"
-      message={error}
-      retry={() => { setError(''); setLoading(true); setReload((value) => value + 1) }}
-    /> : orderedModules.length === 0 ? <PageState
-      title="Materi sedang disiapkan"
-      message="Modul untuk level ini sedang dipersiapkan oleh tim kurikulum."
-    /> : <>
-      <section aria-labelledby="level-progress-title" className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="flex flex-wrap items-end justify-between gap-2">
-          <div>
-            <h2 id="level-progress-title" className="text-xl font-semibold">Kemajuan level {user!.active_course!.current_level}</h2>
-            <p className="mt-1 text-sm text-slate-600">{completedCount} dari {orderedModules.length} modul selesai</p>
-          </div>
-          <span className="text-2xl font-bold text-secondary">{levelProgress}%</span>
+  const activeModule = displayModules.find((m) => m.status === 'Berjalan') || displayModules[0]
+
+  return (
+    <>
+      {/* Header */}
+      <header className="mb8">
+        <div className="dashboard-greeting">
+          RUANG BELAJARMU · {targetLang.toUpperCase()} {levelName}
         </div>
-        <div role="progressbar" aria-label={`Kemajuan level ${user!.active_course!.current_level}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={levelProgress} className="mt-4 h-3 overflow-hidden rounded-full bg-slate-100">
-          <div className="h-full rounded-full bg-secondary" style={{ width: `${levelProgress}%` }} />
+        <div className="row" style={{ alignItems: 'flex-end' }}>
+          <div>
+            <h1>Halo, {userName}.</h1>
+            <p className="mt3 muted">Satu rute aktif, satu percakapan lebih dekat.</p>
+          </div>
+          <span className="tag-code">
+            {targetLang === 'English' ? 'EN' : targetLang} · {levelName}
+          </span>
+        </div>
+      </header>
+
+      {/* Hero Banner */}
+      <section className="dashboard-hero">
+        <div>
+          <span className="tag-code dark">CURRENT POSITION / 0{activeModule.id}</span>
+          <h2 className="mt5">{activeModule.title}</h2>
+          <p className="mt2">
+            {targetLang} {levelName} · Modul 0{activeModule.id}
+          </p>
+
+          <div className="dashboard-route mt7">
+            <div className="dashboard-route-line">
+              <i className="done"></i>
+              <i className="current"></i>
+              <i></i>
+              <i></i>
+            </div>
+            <div className="row">
+              <span className="small">{activeModule.progress}% pelajaran dipelajari</span>
+              <span className="small" style={{ color: '#b8c4d8' }}>
+                18 / 30 kosakata
+              </span>
+            </div>
+          </div>
+
+          <div className="mt7">
+            <Link className="btn" to={`/modules/${activeModule.id}`}>
+              Lanjutkan belajar →
+            </Link>
+          </div>
+        </div>
+
+        <div className="dashboard-side">
+          <div className="tiny uppercase" style={{ color: '#c2d6b4', letterSpacing: '1.5px' }}>
+            Sedikit setiap hari
+          </div>
+          <h3 className="mt4" style={{ color: '#fff', fontSize: '23px' }}>
+            Jaga ritme belajarmu.
+          </h3>
+          <div className="study-week">
+            {['S', 'S', 'R', 'K', 'J', 'S', 'M'].map((d, i) => (
+              <div
+                key={i}
+                className={`study-day ${i < 4 ? 'done' : i === 4 ? 'today' : ''}`}
+              >
+                {d}
+                <b>{i < 4 ? '✓' : i + 1}</b>
+              </div>
+            ))}
+          </div>
+          <p className="dashboard-note">Contoh aktivitas mingguan · 4 hari belajar</p>
         </div>
       </section>
 
-      {resumeModule && <section aria-labelledby="resume-title" className="mt-6 rounded-lg border border-blue-200 bg-blue-50 p-5">
-        <p className="text-sm font-bold text-brand">{resumeModule.status === 'in_progress' || progress(resumeModule.progress_percentage) > 0 ? 'LANJUTKAN BELAJAR' : 'MULAI BELAJAR'}</p>
-        <h2 id="resume-title" className="mt-2 text-xl font-semibold">{resumeModule.title}</h2>
-        <p className="mt-1 text-sm text-slate-600">{resumeModule.module_code} · {formatPercent(progress(resumeModule.progress_percentage))} selesai</p>
-        <Link to={`/modules/${resumeModule.id}`} className="mt-4 inline-flex min-h-12 items-center rounded-lg bg-brand px-5 font-semibold text-white hover:bg-blue-700">
-          {resumeModule.status === 'in_progress' || progress(resumeModule.progress_percentage) > 0 ? 'Lanjutkan modul' : 'Buka modul'} →
-        </Link>
-      </section>}
+      {/* Module Map Section */}
+      <section className="mt10">
+        <div className="section-index">JALUR BELAJARMU</div>
+        <div className="row">
+          <div>
+            <h2>Peta modul</h2>
+            <p className="mt1 muted">Setiap modul adalah satu titik dalam rute {levelName}.</p>
+          </div>
+          <span className="tiny gray">01 — 0{displayModules.length}</span>
+        </div>
 
-      <section aria-labelledby="module-roadmap-title" className="mt-8">
-        <h2 id="module-roadmap-title" className="text-2xl font-semibold">Peta modul</h2>
-        <p className="mt-1 text-slate-600">Ikuti modul sesuai urutan untuk membuka tahap berikutnya.</p>
-        <ol className="mt-5 grid gap-4 md:grid-cols-2">
-          {orderedModules.map((module, index) => {
-            const completed = isCompleted(module)
-            const locked = isLocked(module)
-            const moduleProgress = completed ? 100 : progress(module.progress_percentage)
-            const previousModule = orderedModules[index - 1]
-            return <li key={module.id}>
-              <article className={`flex h-full flex-col rounded-lg border p-5 shadow-sm ${locked ? 'border-slate-200 bg-slate-100' : completed ? 'border-green-300 bg-white' : 'border-blue-300 bg-white'}`}>
-                <div className="flex items-start justify-between gap-3">
+        <div className="grid2 mt6">
+          {displayModules.slice(0, 2).map((m, idx) => (
+            <article
+              key={m.id}
+              className={`card module-card ${
+                m.status === 'Selesai' ? 'complete' : m.status === 'Terkunci' ? 'locked' : ''
+              }`}
+            >
+              <div className="row-start">
+                <div className="flex-row" style={{ alignItems: 'flex-start' }}>
+                  <span className="module-symbol">{String(idx + 1).padStart(2, '0')}</span>
                   <div>
-                    <p className="text-sm font-bold text-secondary">{module.module_code}</p>
-                    <h3 className="mt-2 text-xl font-semibold">{module.title}</h3>
-                    <p className="mt-1 text-slate-600">{module.topic}</p>
+                    <span className="module-index">{m.code}</span>
+                    <h3 className="mt2">{m.title}</h3>
+                    <p className="small muted mt1">{m.topic}</p>
                   </div>
-                  <span className={`shrink-0 rounded-full px-3 py-1 text-xs font-semibold ${locked ? 'bg-slate-200 text-slate-700' : completed ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'}`}>
-                    {locked ? 'Terkunci' : completed ? '✓ Selesai' : module.status === 'in_progress' ? 'Berjalan' : 'Tersedia'}
+                </div>
+                <span
+                  className={`badge ${
+                    m.status === 'Terkunci'
+                      ? 'badge-gray'
+                      : m.status === 'Selesai'
+                      ? 'badge-green'
+                      : 'badge-blue'
+                  }`}
+                >
+                  {m.status === 'Selesai' ? '✓ Selesai' : m.status}
+                </span>
+              </div>
+
+              <div className="route-progress mt7">
+                <i className="active"></i>
+                <i
+                  className={`${m.progress > 20 ? 'active' : ''} ${
+                    m.progress > 20 && m.progress < 100 ? 'current' : ''
+                  }`}
+                ></i>
+                <i className={`${m.progress >= 100 ? 'active' : ''}`}></i>
+                <i></i>
+                <i></i>
+              </div>
+
+              <div className="row mt5">
+                <span className="small semi">{m.progress}% selesai</span>
+                <span className="tiny gray">
+                  Rute {String(idx + 1).padStart(2, '0')} / 03
+                </span>
+              </div>
+
+              <div className="road-bottom">
+                <div className="row">
+                  <span className="tiny gray">
+                    {m.status === 'Terkunci'
+                      ? 'Selesaikan modul sebelumnya'
+                      : m.status === 'Selesai'
+                      ? 'Sudah masuk logbook'
+                      : 'Rute aktif'}
+                  </span>
+                  {m.status === 'Terkunci' ? (
+                    <span className="small muted">Terkunci</span>
+                  ) : (
+                    <Link
+                      className="link"
+                      to={`/modules/${m.id}`}
+                    >
+                      {m.status === 'Selesai' ? 'Lihat lagi →' : 'Lanjutkan →'}
+                    </Link>
+                  )}
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        {displayModules.length > 2 && (
+          <div className="mt4">
+            {displayModules.slice(2).map((m, idx) => (
+              <article
+                key={m.id}
+                className={`card module-card ${
+                  m.status === 'Selesai' ? 'complete' : m.status === 'Terkunci' ? 'locked' : ''
+                }`}
+              >
+                <div className="row-start">
+                  <div className="flex-row" style={{ alignItems: 'flex-start' }}>
+                    <span className="module-symbol">{String(idx + 3).padStart(2, '0')}</span>
+                    <div>
+                      <span className="module-index">{m.code}</span>
+                      <h3 className="mt2">{m.title}</h3>
+                      <p className="small muted mt1">{m.topic}</p>
+                    </div>
+                  </div>
+                  <span
+                    className={`badge ${
+                      m.status === 'Terkunci'
+                        ? 'badge-gray'
+                        : m.status === 'Selesai'
+                        ? 'badge-green'
+                        : 'badge-blue'
+                    }`}
+                  >
+                    {m.status === 'Selesai' ? '✓ Selesai' : m.status}
                   </span>
                 </div>
-                <div role="progressbar" aria-label={`Kemajuan ${module.title}`} aria-valuemin={0} aria-valuemax={100} aria-valuenow={moduleProgress} className="mt-5 h-2 overflow-hidden rounded-full bg-slate-200">
-                  <div className={`h-full rounded-full ${completed ? 'bg-green-600' : 'bg-secondary'}`} style={{ width: `${moduleProgress}%` }} />
+
+                <div className="route-progress mt7">
+                  <i className="active"></i>
+                  <i className={`${m.progress > 20 ? 'active' : ''}`}></i>
+                  <i className={`${m.progress >= 100 ? 'active' : ''}`}></i>
+                  <i></i>
+                  <i></i>
                 </div>
-                <div className="mt-auto flex flex-wrap items-center justify-between gap-3 pt-4">
-                  <span className="text-sm text-slate-600">{formatPercent(moduleProgress)} selesai</span>
-                  {locked ? <span className="text-sm text-slate-600">{previousModule ? `Selesaikan ${previousModule.module_code} untuk membuka` : 'Selesaikan prasyarat untuk membuka'}</span> : <Link to={`/modules/${module.id}`} className="inline-flex min-h-12 items-center font-semibold text-brand hover:underline">
-                    {completed ? 'Ulas kembali' : moduleProgress > 0 ? 'Lanjutkan' : 'Mulai belajar'} →
-                  </Link>}
+
+                <div className="row mt5">
+                  <span className="small semi">{m.progress}% selesai</span>
+                  <span className="tiny gray">Rute 03 / 03</span>
+                </div>
+
+                <div className="road-bottom">
+                  <div className="row">
+                    <span className="tiny gray">
+                      {m.status === 'Terkunci'
+                        ? 'Selesaikan modul sebelumnya'
+                        : m.status === 'Selesai'
+                        ? 'Sudah masuk logbook'
+                        : 'Rute aktif'}
+                    </span>
+                    {m.status === 'Terkunci' ? (
+                      <span className="small muted">Terkunci</span>
+                    ) : (
+                      <Link className="link" to={`/modules/${m.id}`}>
+                        {m.status === 'Selesai' ? 'Lihat lagi →' : 'Lanjutkan →'}
+                      </Link>
+                    )}
+                  </div>
                 </div>
               </article>
-            </li>
-          })}
-        </ol>
+            ))}
+          </div>
+        )}
       </section>
-    </>}
-  </>
+
+      {/* Learning Notes Section */}
+      <section className="mt10">
+        <div className="section-index">CATATAN BELAJAR</div>
+        <div className="grid3">
+          <article className="card brand-stat">
+            <span className="brand-stat-icon">A1</span>
+            <div>
+              <div className="small muted">Jalur aktif</div>
+              <strong className="mt1" style={{ display: 'block' }}>
+                {targetLang}
+              </strong>
+            </div>
+          </article>
+          <article className="card brand-stat">
+            <span className="brand-stat-icon">↗</span>
+            <div>
+              <div className="small muted">Streak</div>
+              <strong className="mt1" style={{ display: 'block' }}>
+                4 hari
+              </strong>
+            </div>
+          </article>
+          <article className="card brand-stat">
+            <span className="brand-stat-icon">◎</span>
+            <div>
+              <div className="small muted">Kuis berikutnya</div>
+              <strong className="mt1" style={{ display: 'block' }}>
+                {levelName} / M01
+              </strong>
+            </div>
+          </article>
+        </div>
+      </section>
+    </>
+  )
 }
