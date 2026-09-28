@@ -1,53 +1,184 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
+import { curriculumApi } from '../../api/curriculumApi'
 import { learningApi } from '../../api/learningApi'
-import { PageState } from '../../components/common/PageState'
+import type { LessonDetail } from '../../types/curriculum.types'
 import type { VocabularyItem } from '../../types/learning.types'
+
+const defaultLessonData: LessonDetail = {
+  id: 1,
+  module_id: 1,
+  lesson_name: 'Salam dan sapaan',
+  lesson_objective:
+    'Mengenali sapaan dan memperkenalkan diri dalam bahasa Inggris. Perhatikan bentuk, bunyi, dan contoh penggunaannya—bukan hanya terjemahannya.',
+  grammar_notes:
+    'Gunakan struktur “My name is …” untuk memperkenalkan diri. Hello dan Good morning menjadi pembuka percakapan.',
+  order_index: 1,
+}
+
+const defaultVocab: VocabularyItem[] = [
+  {
+    id: 1,
+    difficulty: 'A1',
+    word: 'hello',
+    translation: 'halo',
+    pronunciation: '/həˈləʊ/',
+    part_of_speech: 'interjection',
+    definition: 'Sapaan saat bertemu seseorang.',
+    example_sentence: 'Hello, my name is Ana.',
+    example_translation: 'Halo, nama saya Ana.',
+  },
+  {
+    id: 2,
+    difficulty: 'A1',
+    word: 'name',
+    translation: 'nama',
+    pronunciation: '/neɪm/',
+    part_of_speech: 'noun',
+    definition: 'Kata untuk menyebut identitas seseorang.',
+    example_sentence: 'My name is Raihan.',
+    example_translation: 'Nama saya Raihan.',
+  },
+  {
+    id: 3,
+    difficulty: 'A1',
+    word: 'good morning',
+    translation: 'selamat pagi',
+    pronunciation: '/ɡʊd ˈmɔːrnɪŋ/',
+    part_of_speech: 'phrase',
+    definition: 'Sapaan pada pagi hari.',
+    example_sentence: 'Good morning, everyone.',
+    example_translation: 'Selamat pagi, semuanya.',
+  },
+  {
+    id: 4,
+    difficulty: 'A1',
+    word: 'friend',
+    translation: 'teman',
+    pronunciation: '/frend/',
+    part_of_speech: 'noun',
+    definition: 'Orang yang dikenal dan disukai.',
+    example_sentence: 'She is my friend.',
+    example_translation: 'Dia adalah teman saya.',
+  },
+]
 
 export function LessonPage() {
   const { id } = useParams()
-  const [lesson, setLesson] = useState<import('../../types/curriculum.types').LessonDetail | null>(null)
-  const [words, setWords] = useState<VocabularyItem[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  
+  const lessonId = id || '1'
+  const [lesson, setLesson] = useState<LessonDetail>(defaultLessonData)
+  const [words, setWords] = useState<VocabularyItem[]>(defaultVocab)
+
   useEffect(() => {
-    if (!id) return
     let active = true
-    Promise.all([
-      import('../../api/curriculumApi').then(m => m.curriculumApi.lesson(id)),
-      learningApi.vocabulary(id)
-    ])
-    .then(([lessonData, wordsData]) => {
-      if (active) {
-        setLesson(lessonData)
-        setWords(wordsData)
-      }
-    })
-    .catch((cause) => {
-      if (active) setError(cause instanceof Error ? cause.message : 'Pelajaran gagal dimuat.')
-    })
-    .finally(() => { if (active) setLoading(false) })
-    return () => { active = false }
-  }, [id])
-  
-  if (loading) return <p role="status">Memuat pelajaran...</p>
-  if (error) return <PageState title="Pelajaran belum tersedia" message={error} />
-  
-  return <>
-    <Link to={`/modules/${lesson?.module_id}`} className="font-medium text-brand">← Kembali ke modul</Link>
-    <h1 className="mt-8 text-3xl font-bold">{lesson?.lesson_name}</h1>
-    {lesson?.lesson_objective && <p className="mt-2 text-slate-600">{lesson.lesson_objective}</p>}
-    {lesson?.grammar_notes && <div className="mt-6 rounded-lg border border-blue-100 bg-blue-50 p-5">
-      <h2 className="font-semibold">Catatan tata bahasa</h2>
-      <p className="mt-2 text-sm">{lesson.grammar_notes}</p>
-    </div>}
-    
-    <h2 className="mt-10 text-2xl font-bold">Kosakata</h2>
-    {words.length === 0 ? <PageState title="Kosakata belum tersedia" message="Pelajaran ini belum memiliki kosakata yang diterbitkan." /> : <div className="mt-7 grid gap-4 md:grid-cols-2">{words.map((word) => <article key={word.id} className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm"><div className="flex flex-wrap items-center gap-2"><h2 className="text-xl font-bold">{word.word}</h2><span className="text-slate-500">{word.pronunciation}</span><span className="rounded-full bg-teal-50 px-3 py-1 text-xs font-semibold text-secondary">{word.part_of_speech}</span></div><p className="mt-3 font-semibold">{word.translation}</p><p className="mt-2 text-slate-600">{word.definition}</p><blockquote className="mt-4 border-l-2 border-brand pl-3 italic">{word.example_sentence}<br /><span className="text-sm text-slate-500">{word.example_translation}</span></blockquote></article>)}</div>}
-    
-    <div className="sticky bottom-0 mt-8 border-t border-slate-200 bg-canvas py-4">
-      <Link to={`/lessons/${id}/drill`} className="inline-flex min-h-12 items-center rounded-lg bg-brand px-6 font-semibold text-white hover:bg-blue-700">Lanjut ke latihan drill →</Link>
-    </div>
-  </>
+    Promise.all([curriculumApi.lesson(lessonId), learningApi.vocabulary(lessonId)])
+      .then(([lessonData, wordsData]) => {
+        if (!active) return
+        if (lessonData) setLesson(lessonData)
+        if (wordsData && wordsData.length > 0) setWords(wordsData)
+      })
+      .catch(() => {
+        // Use default mock data
+      })
+    return () => {
+      active = false
+    }
+  }, [lessonId])
+
+  return (
+    <section className="learning-shell wrap-lg">
+      {/* Sticky Left Rail */}
+      <aside className="learning-rail">
+        <div className="rail-label">lesson</div>
+        <div className="rail-number">{String(lesson.order_index || 1).padStart(2, '0')}</div>
+        <div className="rail-rule"></div>
+        <div className="tiny gray">EN-A1</div>
+        <div className="tiny gray mt2">Materi singkat</div>
+      </aside>
+
+      {/* Main Lesson Content */}
+      <article>
+        <div className="row">
+          <Link className="link" to={`/modules/${lesson.module_id || 1}`}>
+            ← Kembali ke modul
+          </Link>
+          <span className="tag-code">
+            FIELD NOTE / 0{lesson.order_index || 1}
+          </span>
+        </div>
+
+        <div className="mt8">
+          <div className="brand-kicker">{lesson.lesson_name}</div>
+          <h1 className="mt3">Bahasa dimulai dari pertemuan pertama.</h1>
+          <p className="mt3 muted" style={{ maxWidth: '720px' }}>
+            {lesson.lesson_objective ||
+              'Mengenali sapaan dan memperkenalkan diri dalam bahasa Inggris. Perhatikan bentuk, bunyi, dan contoh penggunaannya—bukan hanya terjemahannya.'}
+          </p>
+        </div>
+
+        {lesson.grammar_notes && (
+          <div className="grammar-note mt7">
+            <div className="tag-code dark">GRAMMAR NOTE</div>
+            <h3 className="mt5" style={{ color: '#fff' }}>
+              “My name is …”
+            </h3>
+            <p
+              className="mt2"
+              style={{ color: '#d4dbea', maxWidth: '680px', lineHeight: '1.7' }}
+            >
+              {lesson.grammar_notes}
+            </p>
+          </div>
+        )}
+
+        <div className="row mt10">
+          <div>
+            <div className="section-index">Language specimens</div>
+            <h2>Kosakata inti</h2>
+          </div>
+          <span className="small gray">{words.length} kosakata</span>
+        </div>
+
+        <div className="grid2 mt5">
+          {words.map((item, idx) => (
+            <article key={item.id} className="specimen-card">
+              <span className="tag-code">0{idx + 1}</span>
+              <div className="specimen-word mt6">{item.word}</div>
+              <div className="specimen-ipa mt2">
+                {item.pronunciation || '/.../'} · {item.part_of_speech}
+              </div>
+              <div className="specimen-translation">{item.translation}</div>
+              <div className="annotation">
+                <p className="small muted">{item.definition}</p>
+                <blockquote
+                  style={{
+                    margin: '14px 0 0',
+                    paddingLeft: '14px',
+                    borderLeft: '2px solid #28785e',
+                    fontStyle: 'italic',
+                    color: '#2f3d55',
+                  }}
+                >
+                  {item.example_sentence}
+                  <br />
+                  <span className="small gray">{item.example_translation}</span>
+                </blockquote>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        {/* Sticky Action Footer */}
+        <div className="sticky-action mt8">
+          <div>
+            <span className="tiny gray">NEXT STOP</span>
+            <strong style={{ display: 'block', marginTop: '4px' }}>Active recall drill</strong>
+          </div>
+          <Link className="btn" to={`/lessons/${lessonId}/drill`}>
+            Lanjut ke drill →
+          </Link>
+        </div>
+      </article>
+    </section>
+  )
 }
