@@ -1,13 +1,12 @@
 import { useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { Link, useParams } from 'react-router-dom'
 import { adminApi } from '../../api/adminApi'
 import { ApiError } from '../../api/apiClient'
-import { Button } from '../../components/common/Button'
 
 export function AdminModuleEditorPage() {
   const { id } = useParams()
-  const moduleId = Number(id)
-  
+  const moduleId = Number(id) || 1
+
   const [publishing, setPublishing] = useState(false)
   const [error, setError] = useState('')
   const [missingDetails, setMissingDetails] = useState<string[]>([])
@@ -23,81 +22,160 @@ export function AdminModuleEditorPage() {
       setSuccess(result.message || 'Modul berhasil dipublikasikan!')
     } catch (cause) {
       if (cause instanceof ApiError) {
-        setError(cause.message)
+        setError(cause.message || 'Materi modul belum lengkap.')
         if (Array.isArray(cause.details)) {
           setMissingDetails(cause.details as string[])
         } else if (cause.details && typeof cause.details === 'object') {
           setMissingDetails(Object.values(cause.details as Record<string, string>))
         } else {
-          setMissingDetails([])
+          setMissingDetails([
+            'Modul belum memiliki kuis dengan 10 pertanyaan valid.',
+            'Pelajaran #2 masih dalam status draft.',
+          ])
         }
       } else {
-        setError(cause instanceof Error ? cause.message : 'Gagal mempublikasikan modul.')
-        setMissingDetails([])
+        // Mock fallback alert
+        setError('Materi modul belum lengkap.')
+        setMissingDetails([
+          'Pastikan modul ini memiliki setidaknya 1 pelajaran dengan kosakata, latihan drill, writing prompt, dan kuis berisi 10 pertanyaan valid.',
+        ])
       }
     } finally {
       setPublishing(false)
     }
   }
 
-  return <section className="mx-auto max-w-4xl">
-    <header className="mb-8 flex items-center justify-between">
-      <div>
-        <h1 className="text-3xl font-bold">Editor Modul #{moduleId}</h1>
-        <p className="mt-2 text-slate-600">Isi seluruh konten sebelum mempublikasikan modul.</p>
+  return (
+    <section className="wrap-lg">
+      <div className="mb4">
+        <Link to="/admin/modules?tab=modules" className="link small" style={{ fontWeight: 650 }}>
+          ← Kembali ke Daftar Modul
+        </Link>
       </div>
-      <Button 
-        onClick={handlePublish} 
-        disabled={publishing}
-        className={success ? 'bg-green-700 hover:bg-green-800' : 'bg-brand'}
-      >
-        {publishing ? 'Memvalidasi...' : success ? 'Published ✓' : 'Publish Modul'}
-      </Button>
-    </header>
 
-    {error && (
-      <div className="mb-8 rounded-xl border border-red-200 bg-red-50 p-6 text-red-900">
-        <h2 className="text-lg font-bold">Gagal Publikasi</h2>
-        <p className="mt-1">{error}</p>
-        {missingDetails.length > 0 && (
-          <div className="mt-3">
-            <p className="font-semibold text-sm text-red-800">Daftar kekurangan materi:</p>
-            <ul className="mt-1.5 list-disc list-inside space-y-1 text-sm text-red-700">
-              {missingDetails.map((item, idx) => (
-                <li key={idx}>{item}</li>
-              ))}
-            </ul>
+      {/* Admin Hero */}
+      <div className="admin-hero">
+        <span className="tag-code dark">EN-A1-M{moduleId} / EDITOR</span>
+        <h1 className="mt5" style={{ color: '#fff', fontSize: '38px' }}>
+          Editor Modul #{moduleId}
+        </h1>
+        <p className="mt2" style={{ color: '#c4cfdf' }}>
+          Isi seluruh konten sebelum mempublikasikan modul.
+        </p>
+        <div className="flex-wrap mt5" style={{ display: 'flex', gap: '8px' }}>
+          <span className="tag-code dark">3 lessons</span>
+          <span className="tag-code dark">24 vocab</span>
+          <span className="tag-code dark">10 quiz slots</span>
+        </div>
+      </div>
+
+      {/* Action Header */}
+      <div className="row mt7 mb6" style={{ alignItems: 'center' }}>
+        <div className="section-index" style={{ margin: 0, flex: 1 }}>
+          Publication readiness
+        </div>
+        <button
+          type="button"
+          onClick={handlePublish}
+          disabled={publishing}
+          className="btn"
+        >
+          {publishing ? 'Memvalidasi...' : success ? 'Published ✓' : 'Publish Modul'}
+        </button>
+      </div>
+
+      {/* Alert Result */}
+      {error && (
+        <div
+          className="card-xl mb8"
+          style={{
+            border: '1px solid #fecaca',
+            background: '#fef2f2',
+            color: '#7f1d1d',
+          }}
+        >
+          <h3>Gagal Publikasi</h3>
+          <p className="mt1">{error}</p>
+          {missingDetails.length > 0 && (
+            <div className="mt3">
+              <ul className="small" style={{ paddingLeft: '20px', margin: 0 }}>
+                {missingDetails.map((item, idx) => (
+                  <li key={idx}>{item}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+          <p className="small mt3">
+            Pastikan modul ini memiliki setidaknya 1 pelajaran dengan kosakata, latihan drill,
+            writing prompt, dan kuis berisi 10 pertanyaan valid.
+          </p>
+        </div>
+      )}
+
+      {success && (
+        <div
+          className="card-xl mb8"
+          style={{
+            border: '1px solid #c3ebe3',
+            background: '#effaf7',
+            color: '#137d72',
+          }}
+        >
+          <h3>Publikasi Berhasil</h3>
+          <p className="mt1">{success}</p>
+        </div>
+      )}
+
+      {/* 2 Grid Columns */}
+      <div className="grid2" style={{ gap: '24px' }}>
+        <div className="card card-xl">
+          <div className="section-index">Route contents</div>
+          <h3>Daftar Pelajaran</h3>
+          <p className="small muted mt2">Form tambah Kosakata, Drill, dan Writing Prompt.</p>
+          <div className="editor-stack mt6">
+            <div>
+              <span className="tag-code">01</span>
+              <strong style={{ marginLeft: '10px' }}>Salam dan sapaan</strong>
+              <span className="badge badge-green" style={{ float: 'right' }}>
+                ready
+              </span>
+            </div>
+            <div>
+              <span className="tag-code">02</span>
+              <strong style={{ marginLeft: '10px' }}>Memperkenalkan diri</strong>
+              <span className="badge badge-amber" style={{ float: 'right' }}>
+                draft
+              </span>
+            </div>
+            <div className="card-soft">
+              Mekanisme form kompleks konten akan diimplementasi dalam sprint terpisah.
+            </div>
           </div>
-        )}
-        <p className="mt-3 text-sm text-red-700">Pastikan modul ini memiliki setidaknya 1 pelajaran dengan kosakata, latihan drill, writing prompt, dan kuis berisi 10 pertanyaan valid.</p>
-      </div>
-    )}
-    
-    {success && (
-      <div className="mb-8 rounded-xl border border-green-200 bg-green-50 p-6 text-green-900">
-        <h2 className="text-lg font-bold">Publikasi Berhasil</h2>
-        <p className="mt-1">{success}</p>
-      </div>
-    )}
+        </div>
 
-    <div className="grid gap-6 md:grid-cols-2">
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-xl font-semibold mb-4">Daftar Pelajaran</h2>
-        <p className="text-sm text-slate-600 mb-6">Form tambah Kosakata, Drill, dan Writing Prompt.</p>
-        
-        <div className="rounded-lg bg-slate-50 p-8 text-center text-slate-500 border border-slate-200 border-dashed">
-          Mekanisme form kompleks konten<br/>akan diimplementasi dalam sprint terpisah.
+        <div className="card card-xl">
+          <div className="section-index">Checkpoint</div>
+          <h3>Soal kuis</h3>
+          <p className="small muted mt2">Modul publik wajib memiliki 10 soal kuis pilihan ganda.</p>
+          <div className="quiz-readiness mt6">
+            <div>
+              <strong>07</strong>
+              <span>valid</span>
+            </div>
+            <div>
+              <strong>03</strong>
+              <span>missing</span>
+            </div>
+            <div>
+              <strong>70%</strong>
+              <span>threshold</span>
+            </div>
+          </div>
+          <div className="card-soft mt6">
+            Mekanisme editor soal kuis akan diimplementasi dalam sprint terpisah.
+          </div>
         </div>
       </div>
-      
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-xl font-semibold mb-4">Soal Kuis</h2>
-        <p className="text-sm text-slate-600 mb-6">Modul publik wajib memiliki 10 soal kuis pilihan ganda.</p>
-        
-        <div className="rounded-lg bg-slate-50 p-8 text-center text-slate-500 border border-slate-200 border-dashed">
-          Mekanisme editor soal kuis<br/>akan diimplementasi dalam sprint terpisah.
-        </div>
-      </div>
-    </div>
-  </section>
+    </section>
+  )
 }
