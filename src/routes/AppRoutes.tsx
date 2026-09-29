@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
+import { AdminLayout } from '../components/layout/AdminLayout'
 import { ProtectedRoute } from '../components/layout/ProtectedRoute'
 import { DashboardPage } from '../pages/learner/DashboardPage'
 import { LessonPage } from '../pages/learner/LessonPage'
@@ -15,34 +16,49 @@ import { QuizPage } from '../pages/learner/QuizPage'
 import { QuizResultPage } from '../pages/learner/QuizResultPage'
 
 import { AdminDashboardPage } from '../pages/admin/AdminDashboardPage'
+import { AdminCurriculumPage } from '../pages/admin/AdminCurriculumPage'
 import { AdminModuleEditorPage } from '../pages/admin/AdminModuleEditorPage'
 
 import { ProfilePage } from '../pages/learner/ProfilePage'
 
 export function AppRoutes() {
-  return <BrowserRouter><Routes><Route element={<AppLayout />}>
-    <Route path="/" element={<LandingPage />} />
-    <Route path="/login" element={<AuthPage mode="login" />} />
-    <Route path="/register" element={<AuthPage mode="register" />} />
-    <Route path="/admin/login" element={<AuthPage mode="login" />} />
-    <Route element={<ProtectedRoute />}>
-      <Route path="/onboarding" element={<OnboardingPage />} />
-      <Route path="/dashboard" element={<DashboardPage />} />
-      <Route path="/modules" element={<DashboardPage />} />
-      <Route path="/modules/:id" element={<ModulePage />} />
-      <Route path="/lessons/:id" element={<LessonPage />} />
-      <Route path="/lessons/:id/drill" element={<DrillPage />} />
-      <Route path="/lessons/:id/writing" element={<WritingPage />} />
-      <Route path="/modules/:id/quiz" element={<QuizPage />} />
-      <Route path="/modules/:id/quiz/result" element={<QuizResultPage />} />
-      <Route path="/progress" element={<ProgressPage />} />
-      <Route path="/profile" element={<ProfilePage />} />
-    </Route>
-    <Route element={<ProtectedRoute admin />}>
-      <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
-      <Route path="/admin/modules" element={<AdminDashboardPage />} />
-      <Route path="/admin/modules/:id/edit" element={<AdminModuleEditorPage />} />
-    </Route>
-    <Route path="*" element={<Navigate to="/" replace />} />
-  </Route></Routes></BrowserRouter>
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* Public & Learner Routes with AppLayout */}
+        <Route element={<AppLayout />}>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<AuthPage mode="login" />} />
+          <Route path="/register" element={<AuthPage mode="register" />} />
+          <Route path="/admin/login" element={<AuthPage mode="login" />} />
+          <Route element={<ProtectedRoute />}>
+            <Route path="/onboarding" element={<OnboardingPage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/modules" element={<DashboardPage />} />
+            <Route path="/modules/:id" element={<ModulePage />} />
+            <Route path="/lessons/:id" element={<LessonPage />} />
+            <Route path="/lessons/:id/drill" element={<DrillPage />} />
+            <Route path="/lessons/:id/writing" element={<WritingPage />} />
+            <Route path="/modules/:id/quiz" element={<QuizPage />} />
+            <Route path="/modules/:id/quiz/result" element={<QuizResultPage />} />
+            <Route path="/progress" element={<ProgressPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+          </Route>
+        </Route>
+
+        {/* Dedicated Admin CMS Routes with AdminLayout (Sidebar Navigation) */}
+        <Route element={<ProtectedRoute admin />}>
+          <Route element={<AdminLayout />}>
+            <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
+            <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+            <Route path="/admin/modules" element={<AdminCurriculumPage />} />
+            <Route path="/admin/curriculum" element={<AdminCurriculumPage />} />
+            <Route path="/admin/modules/:id/edit" element={<AdminModuleEditorPage />} />
+          </Route>
+        </Route>
+
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
+  )
 }
