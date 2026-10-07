@@ -5,6 +5,7 @@ import { DashboardPage } from '../pages/learner/DashboardPage'
 import { FeaturePage } from '../pages/learner/FeaturePage'
 import { LessonPage } from '../pages/learner/LessonPage'
 import { DrillPage } from '../pages/learner/DrillPage'
+import { WritingPage } from '../pages/learner/WritingPage'
 import { ModulePage } from '../pages/learner/ModulePage'
 import { OnboardingPage } from '../pages/learner/OnboardingPage'
 import { ProgressPage } from '../pages/learner/ProgressPage'
@@ -26,7 +27,7 @@ export function AppRoutes() {
       <Route path="/modules/:id" element={<ModulePage />} />
       <Route path="/lessons/:id" element={<LessonPage />} />
       <Route path="/lessons/:id/drill" element={<DrillPage />} />
-      <Route path="/lessons/:id/writing" element={pending('Latihan menulis', 'Teks akan divalidasi terhadap kosakata wajib dan jumlah kata minimal.')} />
+      <Route path="/lessons/:id/writing" element={<WritingPage />} />
       <Route path="/modules/:id/quiz" element={pending('Kuis modul', 'Kuis 10 soal akan menentukan kelulusan pada ambang nilai 70%.')} />
       <Route path="/modules/:id/quiz/result" element={pending('Hasil kuis', 'Nilai dan status modul akan ditampilkan setelah pengiriman jawaban.')} />
       <Route path="/progress" element={<ProgressPage />} />
