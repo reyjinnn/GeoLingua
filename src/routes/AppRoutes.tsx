@@ -1,6 +1,7 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AppLayout } from '../components/layout/AppLayout'
 import { ProtectedRoute } from '../components/layout/ProtectedRoute'
+import { AdminLayout } from '../components/layout/AdminLayout'
 import { DashboardPage } from '../pages/learner/DashboardPage'
 import { FeaturePage } from '../pages/learner/FeaturePage'
 import { LessonPage } from '../pages/learner/LessonPage'
@@ -13,6 +14,9 @@ import { OnboardingPage } from '../pages/learner/OnboardingPage'
 import { ProgressPage } from '../pages/learner/ProgressPage'
 import { AuthPage } from '../pages/public/AuthPage'
 import { LandingPage } from '../pages/public/LandingPage'
+import { AdminDashboardPage } from '../pages/admin/AdminDashboardPage'
+import { AdminModulesPage } from '../pages/admin/AdminModulesPage'
+import { AdminModuleEditorPage } from '../pages/admin/AdminModuleEditorPage'
 
 const pending = (title: string, description: string) => <FeaturePage title={title} description={description} />
 
@@ -36,10 +40,12 @@ export function AppRoutes() {
       <Route path="/profile" element={pending('Profil', 'Preferensi bahasa dan informasi akun akan tersedia di sini.')} />
     </Route>
     <Route element={<ProtectedRoute admin />}>
-      <Route path="/admin/dashboard" element={pending('Dasbor admin', 'Ringkasan pengguna dan konten akan menggunakan endpoint admin.')} />
-      <Route path="/admin/modules" element={pending('Manajemen modul', 'Admin dapat membuat, mengedit, dan menerbitkan modul melalui API admin.')} />
-      <Route path="/admin/modules/:id/edit" element={pending('Editor modul', 'Lesson, kosakata, latihan, dan kuis akan dikelola di sini.')} />
-    </Route>
+  <Route element={<AdminLayout />}>
+    <Route path="/admin/dashboard" element={<AdminDashboardPage />} />
+    <Route path="/admin/modules" element={<AdminModulesPage />} />
+    <Route path="/admin/modules/:id/edit" element={<AdminModuleEditorPage />} />
+  </Route>
+</Route>
     <Route path="*" element={<Navigate to="/" replace />} />
   </Route></Routes></BrowserRouter>
 }
